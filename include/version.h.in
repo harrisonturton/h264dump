@@ -1,0 +1,4 @@
+#pragma once
+
+#define VERSION_MAJOR @h264dump_VERSION_MAJOR@
+#define VERSION_MINOR @h264dump_VERSION_MAJOR@
