@@ -26,14 +26,32 @@ int read_nal_units(struct buf* buf) {
   }
 
   uint32_t next;
-  if (buf_read_u32_be(buf, &next) < 0) {
-    fprintf(stderr, "failed to read from bitstream\n");
-    return FAILURE;
+  size_t overflow;
+  for (;;) {
+    if (buf_peek_32_be(buf, &next) < 0) {
+      fprintf(stderr, "failed to read from bitstream\n");
+      return FAILURE;
+    }
+
+    if (next == 1) {
+      break;
+    }
+
+    if (overflow > 2048) {
+      fprintf(stderr, "Reached end of start code search without finding it\n");
+      return FAILURE;
+    }
+
+    if (buf_read_u8(buf, NULL) < 0) {
+      fprintf(stderr, "failed to pop u8\n");
+      return FAILURE;
+    }
+
+    overflow++;
   }
 
-  if (next != 1) {
-    // TODO: Loop until starting point found
-    printf("Malformed starting point: %d\n", next);
+  if (buf_read_u32_be(buf, NULL) < 0) {
+    fprintf(stderr, "failed to read from bitstream\n");
     return FAILURE;
   }
 

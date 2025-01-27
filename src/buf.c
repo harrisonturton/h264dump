@@ -1,21 +1,22 @@
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
+#include "attrs.h"
 #include "buf.h"
 #include "bytes.h"
 
 #define CHUNK_SZ 256
 
-static void buf_set_err(struct buf* buf, error err) {
+static void buf_set_err(struct buf* nonnull buf, error err) {
   buf->start = NULL;
   buf->curr = NULL;
   buf->end = NULL;
   buf->err = err;
 }
 
-static error buf_file_refill(struct buf* buf) {
+static error buf_file_refill(struct buf* nonnull buf) {
   void* data = malloc(CHUNK_SZ);
   if (!data) {
     buf_set_err(buf, ERR_NOMEM);
@@ -54,13 +55,13 @@ static error buf_file_refill(struct buf* buf) {
   return ERR_NONE;
 }
 
-static error buf_file_free(struct buf* buf) {
+static error buf_file_free(struct buf* nonnull buf) {
   free(buf->start);
   fclose(buf->data);
   return ERR_NONE;
 }
 
-error buf_file(struct buf* buf, const char* path) {
+error buf_file(struct buf* nonnull buf, const char* nonnull path) {
   FILE* fp = fopen(path, "r");
   if (fp == NULL) {
     return ERR_NOT_FOUND;
@@ -91,9 +92,30 @@ error buf_refill(struct buf* buf) {
   return buf->refill(buf);
 }
 
-error buf_read_u32_be(struct buf* buf, uint32_t* val) {
-  uint8_t data[4] = {0};
+error buf_read_u8(struct buf* nonnull buf, uint32_t* nullable val) {
+  if (buf->err != ERR_NONE) {
+    return buf->err;
+  }
 
+  if (buf->curr == buf->end) {
+    printf("Refilling\n");
+    error err = buf_refill(buf);
+    if (err < 0) {
+      return err;
+    }
+  }
+
+  uint8_t next = *(uint8_t*)buf->curr;
+  buf->curr += 1;
+
+  if (val != NULL) {
+    *val = u32_be(next);
+  }
+
+  return ERR_NONE;
+}
+
+error buf_read_u32_be(struct buf* nonnull buf, uint32_t* nullable val) {
   if (buf->err != ERR_NONE) {
     return buf->err;
   }
@@ -108,9 +130,11 @@ error buf_read_u32_be(struct buf* buf, uint32_t* val) {
 
   size_t rem = buf_rem(buf);
   if (rem < 4) {
+    uint8_t data[4] = {0};
+
     printf("leftovers detected\n");
     for (size_t i = 0; i < rem; i++) {
-      data[i] = *(uint8_t*) buf->curr + i;
+      data[i] = *(uint8_t*)buf->curr + i;
       buf->curr += 1;
     }
 
@@ -123,7 +147,7 @@ error buf_read_u32_be(struct buf* buf, uint32_t* val) {
 
     size_t leftover = 4 - rem;
     for (size_t i = 0; i < leftover; i++) {
-      data[rem+i-1] = *(uint8_t*) buf->curr + 1;
+      data[rem + i - 1] = *(uint8_t*)buf->curr + 1;
       buf->curr += 1;
     }
 
@@ -135,6 +159,36 @@ error buf_read_u32_be(struct buf* buf, uint32_t* val) {
   uint32_t next = *(uint32_t*)buf->curr;
   buf->curr += 4;
 
-  *val = u32_be(next);
+  if (val != NULL) {
+    *val = u32_be(next);
+  }
+
+  return ERR_NONE;
+}
+
+error buf_peek_32_be(struct buf* nonnull buf, uint32_t* nullable val) {
+  if (buf->err != ERR_NONE) {
+    return buf->err;
+  }
+
+  if (buf->curr == buf->end) {
+    printf("Refilling\n");
+    error err = buf_refill(buf);
+    if (err < 0) {
+      return err;
+    }
+  }
+
+  size_t rem = buf_rem(buf);
+  if (rem < 4) {
+    // Don't handle cross-refill boundaries for peeking
+    return ERR_REFILL_FAILED;
+  }
+
+  uint32_t next = *(uint32_t*)buf->curr;
+  if (val != NULL) {
+    *val = u32_be(next);
+  }
+
   return ERR_NONE;
 }
