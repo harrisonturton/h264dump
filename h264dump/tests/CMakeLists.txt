@@ -6,4 +6,4 @@ function(create_test NAME SRCS)
     add_test(NAME ${NAME} COMMAND ${NAME})
 endfunction()
 
-create_test(nal_test buf/nal_test.c)
+create_test(buf_test buf/buf_test.c)
