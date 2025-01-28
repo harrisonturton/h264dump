@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "version.h"
-#include "buf.h"
+#include "buf/buf.h"
+#include "buf/file.h"
 #include "bytes.h"
+#include "version.h"
 
 #define SUCCESS 0
 #define FAILURE -1
@@ -25,10 +26,13 @@ int read_nal_units(struct buf* buf) {
     return FAILURE;
   }
 
+  size_t len = 0;
+  size_t offset = 0;
+
   uint32_t next;
   size_t overflow;
   for (;;) {
-    if (buf_peek_32_be(buf, &next) < 0) {
+    if (buf_peek_u32_be(buf, &next) < 0) {
       fprintf(stderr, "failed to read from bitstream\n");
       return FAILURE;
     }
@@ -47,6 +51,7 @@ int read_nal_units(struct buf* buf) {
       return FAILURE;
     }
 
+    offset += 1;
     overflow++;
   }
 
@@ -54,8 +59,40 @@ int read_nal_units(struct buf* buf) {
     fprintf(stderr, "failed to read from bitstream\n");
     return FAILURE;
   }
+  offset += 4;
 
   printf("Found starting point\n");
+
+  overflow = 0;
+  for (;;) {
+    uint32_t next;
+    if (buf_read_u32_be(buf, &next) < 0) {
+      fprintf(stderr, "failed to read from bitstream\n");
+      return FAILURE;
+    }
+
+    offset += 4;
+
+    if ((next & 0x00ffffff) == 1) {
+      printf("Found nal length %lu at offset: %lu based on value 0x1\n", len, offset);
+      return EXIT_SUCCESS;
+    }
+
+    if ((next & 0x00ffffff) == 0) {
+      printf("Found nal length %lu at offset: %lu based on value 0x0\n", len, offset);
+      return EXIT_SUCCESS;
+    }
+
+    len += 4;
+
+    if (overflow > 2048) {
+      printf("Did not find end point within search range\n");
+      return EXIT_FAILURE;
+    }
+
+    overflow++;
+  }
+
   return SUCCESS;
 }
 

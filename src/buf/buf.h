@@ -3,19 +3,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "attrs.h"
-
-typedef enum _error {
-  ERR_NONE = 0,
-  ERR_NOT_FOUND = -1,
-  ERR_NOMEM = -2,
-  ERR_EOF = -3,
-  ERR_REFILL_FAILED = -4,
-} error;
+#include "../error.h"
+#include "../attrs.h"
 
 /**
- * Refillable buffer abstraction.
+ * Producer-owned buffer abstraction.
  */
 struct buf {
   // Start of the buffer.
@@ -27,6 +19,9 @@ struct buf {
   // Current location in the buffer.
   void* nullable curr;
 
+  // Implementation-specific data.
+  void* nullable ctx;
+
   // Last error encountered.
   error err;
 
@@ -35,30 +30,36 @@ struct buf {
 
   // Free the data in the buffer.
   error (*nonnull free)(struct buf* nonnull buf);
-
-  // Implementation-specific data.
-  void* nonnull data;
 };
 
 /**
- * Create a new buffer from a file.
- */
-error buf_file(struct buf* nonnull buf, const char* nonnull path);
-
-/**
  * Refill the buffer with data.
+ * 
+ * @param buf buffer to refill.
  */
 error buf_refill(struct buf* nonnull buf);
 
 /**
  * Release all the resource associated with the buffer.
+ * 
+ * @param buf buffer to free.
  */
 error buf_free(struct buf* nonnull buf);
+
+/**
+ * Get the number of remaining bytes in the current fill.
+ *
+ * @param buf buffer to read from.
+ */
+size_t buf_rem(struct buf* nonnull buf);
 
 /**
  * Read an unsigned 8-bit integer from the buffer into val.
  *
  * When val is NULL, this pops 1 byte from the buffer.
+ * 
+ * @param buf buffer to read from.
+ * @param val pointer to copy the data into.
  */
 error buf_read_u8(struct buf* nonnull buf, uint32_t* nullable val);
 
@@ -66,6 +67,9 @@ error buf_read_u8(struct buf* nonnull buf, uint32_t* nullable val);
  * Read a big-endian 32-bit unsigned integer from the buffer.
  *
  * When val is NULL, this pops 4 bytes from the buffer.
+ * 
+ * @param buf buffer to read from.
+ * @param val pointer to copy the data into.
  */
 error buf_read_u32_be(struct buf* nonnull buf, uint32_t* nullable val);
 
@@ -73,7 +77,10 @@ error buf_read_u32_be(struct buf* nonnull buf, uint32_t* nullable val);
  * Read a big-endian 32-bit unsigned integer without incrementing the cursor.
  *
  * When val is NULL, this is a noop.
+ * 
+ * @param buf buffer to read from.
+ * @param val pointer to copy the data into.
  */
-error buf_peek_32_be(struct buf* nonnull buf, uint32_t* nullable val);
+error buf_peek_u32_be(struct buf* nonnull buf, uint32_t* nullable val);
 
 #endif
