@@ -3,9 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../attrs.h"
-#include "../bytes.h"
-#include "buf.h"
+#include "attrs.h"
+#include "bytes.h"
+#include "buf/buf.h"
+
+void* buf_ctx(struct buf* nonnull buf) {
+  return buf->ctx;
+}
 
 size_t buf_rem(struct buf* buf) {
   return buf->end - buf->start;

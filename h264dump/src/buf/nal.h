@@ -1,9 +1,9 @@
 #ifndef BUF_NAL_H
 #define BUF_NAL_H
 
-#include "../attrs.h"
-#include "../error.h"
-#include "buf.h"
+#include "attrs.h"
+#include "error.h"
+#include "buf/buf.h"
 
 /**
  * Create a NAL buffer from an existing source buffer.

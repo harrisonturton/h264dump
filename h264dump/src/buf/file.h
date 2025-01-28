@@ -2,8 +2,8 @@
 #define BUF_FILE_H
 
 #include "buf.h"
-#include "../error.h"
-#include "../attrs.h"
+#include "error.h"
+#include "attrs.h"
 
 /**
  * Create a new buffer from a file.

@@ -7,65 +7,72 @@
 #define NAL_START_CODE_PREFIX_B 0x00000000
 #define NAL_START_CODE_SEARCH_MAX 2048
 
-struct nal_buf {
+struct nal_buf_ctx {
+  // Whether the current fill is part of a NAL
   bool has_nal;
-  void* inner;
+
+  // Inner buffer to read from
+  struct buf* buf;
 };
 
 static error buf_nal_gobble_start_code(struct buf* nonnull nal_buf) {
-  error err;
+  error err = ERR_NONE;
+  struct nal_buf_ctx* ctx = buf_ctx(nal_buf);
 
   size_t iters = 0;
   while (iters < NAL_START_CODE_SEARCH_MAX) {
     uint32_t start_code;
 
-    err = buf_peek_u32_be(nal_buf, &start_code);
-    if (err < 0) {
-      return err;
-
-      if (start_code == NAL_START_CODE_PREFIX_A) {
-        break;
-      }
-
-      err = buf_read_u8(nal_buf, NULL);
-      if (err < 0) {
-        return err;
-      }
-
-      iters++;
-    }
-
-    err = buf_read_u32_be(nal_buf, NULL);
+    err = buf_peek_u32_be(ctx->buf, &start_code);
     if (err < 0) {
       return err;
     }
+
+    if (start_code == NAL_START_CODE_PREFIX_A) {
+      break;
+    }
+
+    err = buf_read_u8(ctx->buf, NULL);
+    if (err < 0) {
+      return err;
+    }
+
+    iters++;
   }
 
   if (iters == NAL_START_CODE_SEARCH_MAX) {
     return ERR_INVAL;
   }
 
+  err = buf_read_u32_be(ctx->buf, NULL);
+  if (err < 0) {
+    return err;
+  }
+
+  nal_buf->start = ctx->buf->curr;
   return ERR_NONE;
 }
 
 static error buf_nal_gobble_end_code(struct buf* nonnull nal_buf) {
   error err = ERR_NONE;
+  struct nal_buf_ctx* ctx = buf_ctx(nal_buf);
 
   size_t iters = 0;
-  while (buf_rem(nal_buf) >= 4 && iters < NAL_START_CODE_SEARCH_MAX) {
-    uint32_t next;
-    err = buf_read_u32_be(nal_buf, &next);
+  while (buf_rem(ctx->buf) >= 4 && iters < NAL_START_CODE_SEARCH_MAX) {
+    uint32_t end_code;
+
+    err = buf_read_u32_be(ctx->buf, &end_code);
     if (err < 0) {
       return err;
     }
 
-    next &= 0x00ffffff;
+    end_code &= 0x00ffffff;
 
-    if (next == NAL_START_CODE_PREFIX_A) {
+    if (end_code == NAL_START_CODE_PREFIX_A) {
       break;
     }
 
-    if (next == NAL_START_CODE_PREFIX_B) {
+    if (end_code == NAL_START_CODE_PREFIX_B) {
       break;
     }
 
@@ -76,13 +83,20 @@ static error buf_nal_gobble_end_code(struct buf* nonnull nal_buf) {
     return ERR_NOT_FOUND;
   }
 
+  // TODO: Check if no end point found, but reached end of buffer. Suspect bug
+  // in the buf_rem(nal_buf) interaction.
+  nal_buf->end = ctx->buf->curr;
   return 0;
 }
 
 static error buf_nal_refill(struct buf* nonnull nal_buf) {
   error err = ERR_NONE;
+  struct nal_buf_ctx* ctx = buf_ctx(nal_buf);
 
-  struct nal_buf* ctx = (struct nal_buf*)nal_buf->ctx;
+  err = buf_refill(ctx->buf);
+  if (err < 0) {
+    return err;
+  }
 
   // If nal_buf->nal is false (indicating we're not currently in a NAL) then
   // find start code Otherwise skip, and look for end code
@@ -100,7 +114,8 @@ static error buf_nal_refill(struct buf* nonnull nal_buf) {
     return err;
   }
 
-  return 0;
+  // TODO: Handle refills where the current refill straddles a NAL boundary. What then?
+  return ERR_NONE;
 }
 
 static error buf_nal_free(struct buf* nonnull nal_buf) {
@@ -109,14 +124,14 @@ static error buf_nal_free(struct buf* nonnull nal_buf) {
 }
 
 error buf_nal(struct buf* nonnull buf, struct buf* nonnull src) {
-  struct nal_buf* ctx = malloc(sizeof(struct nal_buf));
+  struct nal_buf_ctx* ctx = malloc(sizeof(struct nal_buf_ctx));
   if (ctx == NULL) {
     return ERR_NOMEM;
   }
 
-  *ctx = (struct nal_buf){
+  *ctx = (struct nal_buf_ctx){
       .has_nal = false,
-      .inner = buf->start,
+      .buf = buf,
   };
 
   *buf = (struct buf){
