@@ -1,5 +1,5 @@
-#ifndef BUF_FILE_H
-#define BUF_FILE_H
+#ifndef buf_file_h
+#define buf_file_h
 
 #include "buf.h"
 #include "error.h"

@@ -1,5 +1,8 @@
-#ifndef ATTRS_H
-#define ATTRS_H
+#ifndef attrs_h
+#define attrs_h
+
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 #ifdef __clang__
 #define nullable __nullable
@@ -9,4 +12,4 @@
 #define nonnull
 #endif
 
-#endif 
+#endif

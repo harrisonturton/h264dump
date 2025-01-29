@@ -1,5 +1,5 @@
-#ifndef BYTES_H
-#define BYTES_H
+#ifndef bytes_h
+#define bytes_h
 
 #include <stdint.h>
 

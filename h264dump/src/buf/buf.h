@@ -1,5 +1,5 @@
-#ifndef BUF_H
-#define BUF_H
+#ifndef buf_h
+#define buf_h
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,6 +55,22 @@ void* nonnull buf_ctx(struct buf* nonnull buf);
 error buf_refill(struct buf* nonnull buf);
 
 /**
+ * Current offset in the buffer.
+ * 
+ * @param buf buffer to read from.
+ */
+size_t buf_curr(struct buf* nonnull buf);
+
+/**
+ * Length of the current buffer fill.
+ * 
+ * Note, this is NOT the overall length of the buffer. Just the current slice.
+ * 
+ * @param buf buffer to check the length of.
+ */
+size_t buf_len(struct buf* nonnull buf);
+
+/**
  * Release all the resource associated with the buffer.
  *
  * @param buf buffer to free.
@@ -97,5 +113,8 @@ error buf_read_u32_be(struct buf* nonnull buf, uint32_t* nullable val);
  * @param val pointer to copy the data into.
  */
 error buf_peek_u32_be(struct buf* nonnull buf, uint32_t* nullable val);
+
+error buf_read_u24_be(struct buf* nonnull buf, uint32_t* nullable val);
+error buf_peek_u24_be(struct buf* nonnull buf, uint32_t* nullable val);
 
 #endif

@@ -7,3 +7,4 @@ function(create_test NAME SRCS)
 endfunction()
 
 create_test(buf_test buf/buf_test.c)
+create_test(nal_test buf/nal_test.c)

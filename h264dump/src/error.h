@@ -1,7 +1,8 @@
-#ifndef ERROR_H
-#define ERROR_H
+#ifndef error_h
+#define error_h
 
 typedef enum _error {
+  SUCCESS = 0,
   ERR_NONE = 0,
   ERR_NOT_FOUND = -1,
   ERR_NOMEM = -2,

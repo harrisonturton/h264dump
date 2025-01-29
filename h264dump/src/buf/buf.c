@@ -4,15 +4,15 @@
 #include <stdlib.h>
 
 #include "attrs.h"
-#include "bytes.h"
 #include "buf/buf.h"
+#include "bytes.h"
 
 void* buf_ctx(struct buf* nonnull buf) {
   return buf->ctx;
 }
 
 size_t buf_rem(struct buf* buf) {
-  return buf->end - buf->start;
+  return buf_len(buf) - buf_curr(buf);
 }
 
 error buf_free(struct buf* buf) {
@@ -21,6 +21,14 @@ error buf_free(struct buf* buf) {
 
 error buf_refill(struct buf* buf) {
   return buf->refill(buf);
+}
+
+size_t buf_curr(struct buf* nonnull buf) {
+  return buf->curr - buf->start;
+}
+
+size_t buf_len(struct buf* nonnull buf) {
+  return buf->end - buf->start;
 }
 
 error buf_read_u8(struct buf* nonnull buf, uint32_t* nullable val) {
@@ -94,6 +102,18 @@ error buf_read_u32_be(struct buf* nonnull buf, uint32_t* nullable val) {
   return ERR_NONE;
 }
 
+error buf_read_u24_be(struct buf* nonnull buf, uint32_t* nullable val) {
+  uint32_t next;
+
+  error err = buf_read_u32_be(buf, &next);
+  if (err < 0) {
+    return err;
+  }
+
+  *val = (next >> 8) & 0x00ffffff;
+  return ERR_NONE;
+}
+
 error buf_peek_u32_be(struct buf* nonnull buf, uint32_t* nullable val) {
   if (buf->err != ERR_NONE) {
     return buf->err;
@@ -109,7 +129,8 @@ error buf_peek_u32_be(struct buf* nonnull buf, uint32_t* nullable val) {
   size_t rem = buf_rem(buf);
   if (rem < 4) {
     // TODO: handle cross-refill boundaries when peeking
-    return ERR_REFILL_FAILED;
+    // return ERR_REFILL_FAILED;
+    return ERR_EOF;
   }
 
   uint32_t next = *(uint32_t*)buf->curr;
@@ -117,5 +138,18 @@ error buf_peek_u32_be(struct buf* nonnull buf, uint32_t* nullable val) {
     *val = u32_be(next);
   }
 
+  return ERR_NONE;
+}
+
+error buf_peek_u24_be(struct buf* nonnull buf, uint32_t* nullable val) {
+  uint32_t next;
+  error err;
+
+  err = buf_peek_u32_be(buf, &next);
+  if (err < 0) {
+    return err;
+  }
+
+  *val = (next >> 8) & 0xffffff;
   return ERR_NONE;
 }

@@ -1,7 +1,7 @@
 #include "buf.h"
 #include "file.h"
 
-#define CHUNK_SZ 256
+#define CHUNK_SZ 597762
 
 static void buf_set_err(struct buf* nonnull buf, error err) {
   buf->start = NULL;
@@ -11,6 +11,7 @@ static void buf_set_err(struct buf* nonnull buf, error err) {
 }
 
 static error buf_file_refill(struct buf* nonnull buf) {
+  printf("file refill\n");
   void* data = malloc(CHUNK_SZ);
   if (!data) {
     buf_set_err(buf, ERR_NOMEM);
@@ -25,6 +26,7 @@ static error buf_file_refill(struct buf* nonnull buf) {
   }
 
   size_t read = fread(data, 1, CHUNK_SZ, fp);
+  printf("read:  %lu\n", read);
   if (read != CHUNK_SZ) {
     // Fail when read doesn't complete but not EOF
     if (feof(fp) == 0) {
