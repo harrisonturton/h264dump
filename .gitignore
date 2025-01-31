@@ -1,2 +1,2 @@
-build
-checks.json
+.bazel
+.vscode

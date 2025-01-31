@@ -1,0 +1,12 @@
+load("//:common.bzl", "COPTS")
+
+cc_binary(
+    name = "h264dump",
+    srcs = glob(["*.c", "*.h"]),
+    visibility = ["//visibility:public"],
+    copts = COPTS,
+    deps = [
+        "//src/common",
+        "//src/buf",
+    ],
+)

@@ -1,0 +1,5 @@
+cc_library(
+    name = "runtime",
+    hdrs = glob(["*.h"]),
+    visibility = ["//visibility:public"],
+)

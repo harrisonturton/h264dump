@@ -1,0 +1,4 @@
+"""Utility for reading h264 video"""
+module(name = "h264dump")
+
+bazel_dep(name = "rules_cc", version = "0.1.0")

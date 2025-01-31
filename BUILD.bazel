@@ -1,0 +1,4 @@
+alias(
+    name = "h264dump",
+    actual = "//src/tools:h264dump",
+)
