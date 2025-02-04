@@ -2,7 +2,7 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//:common.bzl", "COPTS")
 
 cc_library(
-    name = "buf",
+    name = "reader",
     srcs = glob(["*.c"]),
     hdrs = glob(["*.h"]),
     visibility = ["//visibility:public"],

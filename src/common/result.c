@@ -15,6 +15,8 @@ char* nonnull res_str(result_t res) {
       return "end of file";
     case ERR_INVALID_INPUT:
       return "invalid input";
+    case ERR_INVALID_STATE:
+      return "invalid state";
     case ERR_UNIMPLEMENTED:
       return "unimplemented";
     default:

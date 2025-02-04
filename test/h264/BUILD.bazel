@@ -1,0 +1,15 @@
+load("@rules_cc//cc:defs.bzl", "cc_test")
+load("//:common.bzl", "COPTS")
+
+cc_test(
+    name = "nal_reader_test",
+    srcs = ["nal_reader_test.c"],
+    copts = COPTS,
+    data = glob(["data/**"]),
+    deps = [
+        "//src/common",
+        "//src/h264",
+        "//src/reader",
+        "//test/runtime",
+    ],
+)

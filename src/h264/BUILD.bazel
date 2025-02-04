@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//:common.bzl", "COPTS")
+
+cc_library(
+    name = "h264",
+    srcs = glob(["*.c"]),
+    hdrs = glob(["*.h"]),
+    visibility = ["//visibility:public"],
+    copts = COPTS,
+    deps = [
+        "//src/common",
+        "//src/reader",
+    ],
+)

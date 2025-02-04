@@ -2,22 +2,22 @@ load("@rules_cc//cc:defs.bzl", "cc_test")
 load("//:common.bzl", "COPTS")
 
 cc_test(
-    name = "buf_file_test",
-    srcs = ["buf_file_test.c"],
+    name = "file_reader_test",
+    srcs = ["file_reader_test.c"],
     copts = COPTS,
-    data = ["file.bin"],
+    data = glob(["data/**"]),
     deps = [
-        "//src/buf",
+        "//src/reader",
         "//test/runtime",
     ],
 )
 
 cc_test(
-    name = "buf_mem_test",
-    srcs = ["buf_mem_test.c"],
+    name = "mem_reader_test",
+    srcs = ["mem_reader_test.c"],
     copts = COPTS,
     deps = [
-        "//src/buf",
+        "//src/reader",
         "//test/runtime",
     ],
 )

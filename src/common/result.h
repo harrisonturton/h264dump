@@ -4,6 +4,7 @@
 #include "common/compiler.h"
 
 typedef enum {
+  OK_READ = 2,
   OK_FOUND = 1,
   OK = 0,
   ERR_NOT_FOUND = -1,
